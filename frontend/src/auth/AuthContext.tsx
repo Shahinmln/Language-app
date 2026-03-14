@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: any }) => {
       if (cancelled) return;
       setSession(data.session ?? null);
       setUser(data.session?.user ?? null);
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((_event: any, nextSession: any) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
     });

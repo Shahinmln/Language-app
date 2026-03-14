@@ -26,7 +26,7 @@ export default function Vocabulary() {
     setLoading(true);
     setError(null);
     getUserWords(user.id, statusFilter ? { status: statusFilter } : undefined)
-      .then((res) => { if (!cancelled) setWords(res.words ?? []); })
+      .then((res) => { if (!cancelled) setWords((res.words ?? []) as UserWord[]); })
       .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load"); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

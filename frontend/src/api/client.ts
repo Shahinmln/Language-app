@@ -77,7 +77,7 @@ export interface GetStoriesParams {
 
 export function getStories(params?: GetStoriesParams) {
   return request<{ stories: Story[] }>("/api/stories", {
-    params: params as Record<string, string | number | undefined>,
+    params: params as unknown as Record<string, string | number | undefined>,
   });
 }
 
@@ -184,6 +184,6 @@ export interface ExploreProParams {
 
 export function explorePro(params: ExploreProParams) {
   return request<{ stories: Story[] }>("/api/explore/pro", {
-    params: params as Record<string, string | number | undefined>,
+    params: params as unknown as Record<string, string | number | undefined>,
   });
 }
