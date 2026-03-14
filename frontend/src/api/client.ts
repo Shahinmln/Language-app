@@ -1,40 +1,32 @@
 /**
  * Single API client for TaleTalk backend.
- * Base URL comes from `VITE_API_URL` when set; otherwise it falls back
- * to the current origin in the browser, and finally localhost:8000.
- * This avoids passing an empty string into `new URL`, which crashes with
- * "Failed to construct 'URL': Invalid base URL".
+ * Safe for Vercel serverless: no window or browser-only APIs.
+ * Base URL from VITE_API_URL; if missing, fallback to localhost for local dev only.
  */
+
+const DEFAULT_BASE = "http://localhost:8000";
 
 function getBaseUrl(): string {
   const envBase = import.meta.env.VITE_API_URL;
-
-  // Prefer explicit env when it's a non-empty string
   if (typeof envBase === "string" && envBase.trim() !== "") {
-    return envBase;
+    const base = envBase.trim();
+    if (/^https?:\/\//i.test(base)) {
+      return base.replace(/\/+$/, "");
+    }
+    return base.startsWith("//") ? `https:${base}` : `https://${base}`;
   }
-
-  // In the browser, default to the current origin so relative `/api`
-  // routes can be proxied by the dev server / reverse proxy.
-  if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin;
-  }
-
-  // Fallback for non-browser environments (SSR, tests, etc.)
-  return "http://localhost:8000";
+  return DEFAULT_BASE;
 }
-
-const BASE = getBaseUrl();
 
 export async function request<T>(
   path: string,
   options?: RequestInit & { params?: Record<string, string | number | undefined> }
 ): Promise<T> {
+  const base = getBaseUrl();
   const { params, ...init } = options ?? {};
 
-  // Support both absolute URLs and relative paths.
   const isAbsolute = /^https?:\/\//i.test(path);
-  const url = isAbsolute ? new URL(path) : new URL(path, BASE);
+  const url = isAbsolute ? new URL(path) : new URL(path.startsWith("/") ? path : `/${path}`, base);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== "") url.searchParams.set(k, String(v));

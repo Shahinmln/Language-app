@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_API_URL: string;
+  /** Backend API base URL (e.g. https://your-api.fly.dev). Required in production (e.g. Vercel). */
+  readonly VITE_API_URL?: string;
 }
 
 interface ImportMeta {
