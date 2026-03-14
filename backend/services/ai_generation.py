@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 from typing import Any, Dict, List, Optional
 
@@ -15,11 +14,10 @@ REQUIREMENTS:
 1. Length: Exactly {word_count} words (±5%). Count carefully.
 2. Topic: {topic}
 3. Include these target words naturally: {target_words}
-4. For Korean A1/A2: Include Romanization for EVERY sentence:
-   "Annyeonghaseyo (안녕하세요) - Hello"
-5. Sentence structure: Simple for A1/A2, complex for C1.
-6. Include cultural context where appropriate.
-7. End with a moral or reflection.
+4. For beginner levels (A1/A2), keep sentences short and clear. For advanced levels (C1/C2), use richer structures.
+5. Include cultural context where appropriate.
+6. End with a moral or reflection.
+7. Identify 1–3 key grammar or expression patterns used in the story that are useful for learners at this level.
 
 OUTPUT FORMAT (JSON):
 {{
@@ -32,9 +30,45 @@ OUTPUT FORMAT (JSON):
     {{"word": "...", "definition": "...", "translation": "...", "example": "...", "pos": "..."}}
   ],
   "target_words_used": ["..."],
-  "cef_level_verified": "..."
+  "cef_level_verified": "...",
+  "patterns": [
+    {{
+      "structure": "...",           // e.g. a grammar pattern or expression
+      "explanation": "...",         // learner-friendly explanation in English
+      "examples": ["...", "..."]    // 1–3 short example sentences
+    }}
+  ]
 }}
 IMPORTANT: Verify word count before outputting. If not {word_count} words, regenerate.
+"""
+
+
+SIMPLIFY_STORY_PROMPT = """
+You are helping a language learner who found the following story too hard.
+
+Rewrite the SAME story in {language}, keeping:
+- The same topic and overall plot.
+- The same characters and key events.
+
+But make it EASIER:
+- Shorter (about half the number of words of the original).
+- Simpler vocabulary and sentence structures (aim for one CEFR level lower than {level} if possible).
+- Clearer explanations and more repetition of key phrases.
+
+INPUT STORY (JSON):
+{original_json}
+
+OUTPUT FORMAT (JSON):
+{{
+  "title": "...",                   // keep similar but can add a hint like "(easy)"
+  "content": "...",                 // full simplified story text
+  "transcript_json": [
+    {{"sentence": "...", "romanization": "...", "translation": "...", "words": [{{"text": "...", "pos": "..."}}]}}
+  ],
+  "vocabulary": [
+    {{"word": "...", "definition": "...", "translation": "...", "example": "...", "pos": "..."}}
+  ]
+}}
 """
 
 
@@ -45,8 +79,7 @@ Analyze this transcript in {language} (Level {level}). Generate exactly 3 quiz q
 2. CLOZE TEST: Remove a key word/particle from a sentence. (Fill blank, 4 options)
 3. SHADOWING TARGET: Select one full sentence for pronunciation practice.
 
-For Korean A1/A2: ALL options MUST include Romanization.
-Example: "Gamsahamnida (감사합니다)" not just "감사합니다"
+When the writing system is not Latin, always include both the original script and a learner-friendly pronunciation guide (e.g. romanization or phonetic hint) wherever helpful.
 
 OUTPUT FORMAT (JSON):
 {{
@@ -116,11 +149,22 @@ class AIGenerationService:
     Thin wrapper around Groq's Chat Completion API for stories and quizzes.
     """
 
-    def __init__(self, client: Optional[Groq] = None, model: str = "llama-3.3-70b-versatile") -> None:
-        api_key = os.getenv("GROQ_API_KEY")
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        client: Optional[Groq] = None,
+        model: str = "llama-3.3-70b-versatile",
+    ) -> None:
+        """
+        Initialize the AI generation service.
+
+        In normal application code, `api_key` should be provided explicitly from
+        the centralized settings module during the FastAPI startup event. The
+        `client` argument exists mainly for testing.
+        """
         if not api_key and not client:
             raise RuntimeError("GROQ_API_KEY is required for AI generation")
-        self.client = client or Groq(api_key=api_key)
+        self.client = client or Groq(api_key=api_key)  # type: ignore[arg-type]
         self.model = model
 
     async def generate_story_text(
@@ -201,4 +245,37 @@ class AIGenerationService:
         except json.JSONDecodeError:
             pass
         return _fallback_quiz()
+
+    async def simplify_story(
+        self,
+        story_json: Dict[str, Any],
+        level: str,
+        language: str,
+    ) -> Dict[str, Any]:
+        """
+        Generate a shorter/simpler version of an existing story while preserving core content.
+        """
+        original_json = json.dumps(story_json, ensure_ascii=False)
+        prompt = SIMPLIFY_STORY_PROMPT.format(
+            language=language,
+            level=level,
+            original_json=original_json,
+        )
+
+        completion = self.client.chat.completions.create(
+            model=self.model,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": "You simplify language-learning stories without losing meaning."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+
+        content = completion.choices[0].message.content
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            extracted = _extract_json_substring(content)
+            data = json.loads(extracted)
+        return data
 

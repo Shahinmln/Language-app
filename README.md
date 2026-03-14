@@ -1,4 +1,4 @@
-# StoryPod AI
+# TaleTalk
 
 Language learning app: explore stories, generate AI stories, read/listen, track vocabulary, personalized recommendations.
 
@@ -13,10 +13,15 @@ pip install -r requirements.txt
 set SUPABASE_URL=...
 set SUPABASE_KEY=...
 set GROQ_API_KEY=...
+
+# Development
 uvicorn main:app --reload --port 8000
+
+# Production (Gunicorn + UvicornWorker)
+gunicorn --bind=0.0.0.0:5000 --reuse-port -k uvicorn.workers.UvicornWorker main:app
 ```
-API: http://localhost:8000  
-Swagger: http://localhost:8000/docs
+API (dev): http://localhost:8000  
+Swagger (dev): http://localhost:8000/docs
 
 ### Frontend
 ```bash
