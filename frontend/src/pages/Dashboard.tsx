@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { request } from "../api/client";
 
 interface Profile {
+  display_name?: string | null;
   native_language?: string | null;
   learning_languages?: string[] | null;
   about?: string | null;
@@ -95,7 +96,7 @@ export default function Dashboard() {
     <div className="page-card">
       <h1 className="page-title">Your learning space</h1>
       <p className="page-subtitle">
-        Welcome back, {user.email}. Choose the plan that fits you and continue from where you left off.
+        Welcome back, {profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email}. Choose the plan that fits you and continue from where you left off.
       </p>
       {billingError && <p style={{ color: "var(--error)", marginBottom: 12 }}>{billingError}</p>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>

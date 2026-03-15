@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getStories, explorePro, type Story } from "../api/client";
 
 export default function Explore() {
+  console.log("Explore page mounted");
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +16,7 @@ export default function Explore() {
     setLoading(true);
     setError(null);
     const fetchStories = async () => {
+      console.log("Fetching stories...");
       try {
         if (userId.trim()) {
           const res = await explorePro({

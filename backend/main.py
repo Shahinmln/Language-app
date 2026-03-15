@@ -105,6 +105,11 @@ class GenerateStoryBody(BaseModel):
     model_config = {"json_schema_extra": {"examples": [{"target_words": ["airport"]}]}}
 
 
+@app.get("/")
+def root_health() -> Dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.get("/health")
 async def health() -> Dict[str, str]:
     return {"status": "ok"}
@@ -903,6 +908,7 @@ async def upsert_profile(
     plan = payload.get("plan") or "free"
     plan_renewal_date = payload.get("plan_renewal_date")
     public_profile = bool(payload.get("public_profile")) if "public_profile" in payload else None
+    display_name = payload.get("display_name") or None
 
     try:
         existing = (
@@ -918,10 +924,13 @@ async def upsert_profile(
                 "learning_languages": learning_languages,
                 "about": about,
                 "plan": plan,
-                "plan_renewal_date": plan_renewal_date,
             }
+            if plan_renewal_date is not None:
+                updates["plan_renewal_date"] = plan_renewal_date
             if public_profile is not None:
                 updates["public_profile"] = public_profile
+            if display_name is not None:
+                updates["display_name"] = display_name
             supabase.table("profiles").update(updates).eq("id", user_id).execute()
         else:
             create_payload: Dict[str, Any] = {
@@ -930,13 +939,16 @@ async def upsert_profile(
                 "learning_languages": learning_languages,
                 "about": about,
                 "plan": plan,
-                "plan_renewal_date": plan_renewal_date,
             }
+            if plan_renewal_date is not None:
+                create_payload["plan_renewal_date"] = plan_renewal_date
             if public_profile is not None:
                 create_payload["public_profile"] = public_profile
+            if display_name:
+                create_payload["display_name"] = display_name
             supabase.table("profiles").insert(create_payload).execute()
     except Exception as e:
-        print("upsert_profile failed:", e)
+        print("upsert_profile failed:", type(e).__name__, str(e))
         raise HTTPException(status_code=500, detail="Could not save profile")
 
     return {"success": True}

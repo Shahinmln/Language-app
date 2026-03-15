@@ -14,8 +14,6 @@ export default function AuthPage() {
   const initialMode = useModeFromQuery();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,19 +28,18 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (mode === "register") {
+        const redirectTo =
+          typeof window !== "undefined" ? `${window.location.origin}/` : undefined;
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: {
-              name,
-              surname,
-              username,
-            },
+            data: { full_name: name },
+            emailRedirectTo: redirectTo,
           },
         });
         if (signUpError) throw signUpError;
-        setInfo("Check your email to verify your address before signing in.");
+        setInfo("Check your email to verify your address, then sign in.");
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -80,38 +77,17 @@ export default function AuthPage() {
       </div>
       <form onSubmit={handleSubmit} className="form">
         {mode === "register" && (
-          <>
-            <label className="field">
-              <span className="field-label">Name</span>
-              <input
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={loading}
-                className="field-input"
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">Surname</span>
-              <input
-                required
-                value={surname}
-                onChange={(e) => setSurname(e.target.value)}
-                disabled={loading}
-                className="field-input"
-              />
-            </label>
-            <label className="field">
-              <span className="field-label">Username</span>
-              <input
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={loading}
-                className="field-input"
-              />
-            </label>
-          </>
+          <label className="field">
+            <span className="field-label">Name</span>
+            <input
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+              className="field-input"
+              placeholder="How we should call you"
+            />
+          </label>
         )}
         <label className="field">
           <span className="field-label">Email</span>

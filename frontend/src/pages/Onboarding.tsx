@@ -44,7 +44,8 @@ export default function Onboarding() {
           user_id: user.id,
           native_language: nativeLanguage,
           learning_languages: learningLanguages,
-          about,
+          about: about || "",
+          display_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
         }),
       });
       navigate("/", { replace: true });
@@ -62,7 +63,9 @@ export default function Onboarding() {
 
   return (
     <div className="page-card" style={{ maxWidth: 520, margin: "32px auto" }}>
-      <h1 className="page-title">Welcome, {user.email}</h1>
+      <h1 className="page-title">
+        Welcome, {user.user_metadata?.full_name || user.user_metadata?.name || user.email}
+      </h1>
       <p className="page-subtitle">
         Tell TaleTalk a bit about you so we can adapt stories to your languages and interests.
       </p>
@@ -100,14 +103,16 @@ export default function Onboarding() {
           </div>
         </div>
         <label className="field">
-          <span className="field-label">Tell us about yourself (hobbies, goals, how you like to learn)</span>
+          <span className="field-label">
+            Tell us about yourself (optional — hobbies, goals, how you like to learn)
+          </span>
           <textarea
-            required
             value={about}
             onChange={(e) => setAbout(e.target.value)}
             disabled={loading}
             rows={4}
             className="field-textarea"
+            placeholder="Optional"
           />
         </label>
         {error && <p style={{ color: "var(--error)" }}>{error}</p>}

@@ -17,12 +17,13 @@ function Nav() {
   const { user } = useAuth();
   const location = useLocation();
   const path = location.pathname;
+  const isSignedIn = user && (user as { email_confirmed_at?: string | null }).email_confirmed_at;
   return (
     <nav className="nav">
       <span className="nav-logo">TaleTalk</span>
       <div className="nav-links">
         <Link to="/" className={`nav-link ${path === "/" ? "nav-link--active" : ""}`}>Home</Link>
-        {user && (
+        {isSignedIn && (
           <>
             <Link to="/dashboard" className={`nav-link ${path.startsWith("/dashboard") ? "nav-link--active" : ""}`}>Dashboard</Link>
             <Link to="/explore" className={`nav-link ${path.startsWith("/explore") ? "nav-link--active" : ""}`}>Explore</Link>
@@ -35,7 +36,7 @@ function Nav() {
         )}
       </div>
       <span className="nav-user">
-        {user ? user.email : "Guest"}
+        {isSignedIn ? (user!.user_metadata?.full_name || user!.user_metadata?.name || user!.email) : "Guest"}
       </span>
     </nav>
   );
