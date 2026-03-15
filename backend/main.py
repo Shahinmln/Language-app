@@ -106,8 +106,8 @@ class GenerateStoryBody(BaseModel):
 
 
 @app.get("/")
-def root_health() -> Dict[str, str]:
-    return {"status": "ok"}
+def root():
+    return {"status": "backend running"}
 
 
 @app.get("/health")
